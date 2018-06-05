@@ -1,0 +1,11 @@
+[package]
+name = "rust-docx"
+version = "0.1.0"
+authors = ["Maximilian Dauner <maximilian.dauner@gmx.de>"]
+
+[lib]
+name = "rustdocx"
+path = "src/lib.rs"
+
+[dependencies]
+zip = "0.4.0"
