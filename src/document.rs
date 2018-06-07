@@ -1,38 +1,39 @@
-use std::fs::{File, metadata, rename};
-use std::env::{current_dir};
-use std::io::prelude::{Seek, Read};
-use std::io::{Result};
-use zip::result::ZipResult;
+use docx_error::DocxError;
+use std::env::current_dir;
+use std::fs::{metadata, rename, File};
+use std::io::prelude::{Read, Seek};
+use std::path::{Path, PathBuf};
 use zip::read::{ZipArchive, ZipFile};
+use zip::result::ZipResult;
 
 #[derive(Debug)]
 pub struct Document {
     pub file_path: String,
 }
 
-
-pub fn browse_zip_archive<T, F, U>(buf: &mut T, browse_func: F) -> ZipResult<Vec<U>>
-    where T: Read + Seek,
-          F: Fn(&ZipFile) -> ZipResult<U>
-{
-    let mut archive = ZipArchive::new(buf)?;
-    (0..archive.len())
-        .map(|i| archive.by_index(i).and_then(|file| browse_func(&file)))
-        .collect()
-}
-
-fn convert_file(source_file: &str, destination_file: &str) -> Result<()> {
-    rename(source_file, destination_file)?;
-    Ok(())
+fn template_docx_path() -> Result<PathBuf, DocxError> {
+    match current_dir() {
+        Ok(current_path) => Ok([current_path, Path::new("template").join("template.docx")]
+            .iter()
+            .collect()),
+        Err(_) => Err(DocxError::TemplateNotFound),
+    }
 }
 
 impl Document {
-    pub fn new() -> Document {
-        let mut cur_dir = current_dir().unwrap();
-        cur_dir.push("template");
-        cur_dir.push("template.docx");
-        println!("{:?}", cur_dir);
-
+    pub fn new() -> Result<Document, DocxError> {
+        let template_docx = template_docx_path()?;
+        let file = File::open(template_docx_path()?).unwrap();
+        let mut archive = ZipArchive::new(file).unwrap();
+        for i in 0..archive.len() {
+            let mut f = archive.by_index(i).unwrap();
+            let mut buffer = String::new();
+            f.read_to_string(&mut buffer).unwrap();
+            println!("----------------------------");
+            println!("{}", f.name());
+            println!("----------------------------");
+            println!("{}", buffer);
+        }
         let mut zip = current_dir().unwrap();
         zip.push("template");
         zip.push("template.zip");
@@ -47,6 +48,7 @@ impl Document {
         */
         //let mut file = File::create("template.zip").unwrap();
        // Document { file_path: docx_path.to_str().unwrap().to_string() }
+        /*
         rename(cur_dir.to_str().unwrap(), zip.to_str().unwrap());
 
         let mut file = File::open(&zip).expect("Couldn't open file");
@@ -64,6 +66,9 @@ impl Document {
         if metadata.is_file() == false {
             println!("File nicht gefunden");
         }
-        Document { file_path: path }
+        */
+        Ok(Document {
+            file_path: "t".to_string(),
+        })
     }
 }
